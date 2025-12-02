@@ -5,6 +5,7 @@ const rabbitmq = require('./config/rabbitmq');
 const redisClient = require('./config/redis');
 const orderProducer = require('./producer/orderProducer');
 const orderConsumer = require('./consumers/orderConsumer');
+const orderService = require('./services/orderService');
 
 const app = express();
 app.use(express.json());
@@ -41,7 +42,7 @@ app.post('/api/orders', async (req, res) => {
 // API: Kiểm tra trạng thái đơn hàng
 app.get('/api/orders/:orderId', async (req, res) => {
   try {
-    const order = await redisClient.getOrder(req.params.orderId);
+    const order = await orderService.getOrder(req.params.orderId);
     
     if (!order) {
       return res.status(404).json({
@@ -68,15 +69,42 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// API: Kiểm tra trạng thái queue
+app.get('/api/queue/status', async (req, res) => {
+  try {
+    const channel = await rabbitmq.getChannel();
+    const queueName = process.env.QUEUE_NAME || 'order_queue';
+    
+    // Kiểm tra queue info
+    const queueInfo = await channel.checkQueue(queueName);
+    
+    res.json({
+      success: true,
+      queue: {
+        name: queueName,
+        messageCount: queueInfo.messageCount,      // Số message chờ xử lý
+        consumerCount: queueInfo.consumerCount,    // Số consumer đang hoạt động
+        isEmpty: queueInfo.messageCount === 0      // Queue đã rỗng chưa
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi kiểm tra queue',
+      error: error.message
+    });
+  }
+});
+
+
 // Khởi động server
 async function startServer() {
   try {
     // Kết nối RabbitMQ và Redis
-    // await rabbitmq.connect();
-    // await redisClient.connect();
-
-    // // Khởi động consumer
-    // await orderConsumer.startConsumer();
+    await rabbitmq.connectRabbitMQ();
+ 
+    // Khởi động consumer
+    await orderConsumer.startConsumer();
 
     // Lắng nghe HTTP requests
     const PORT = process.env.PORT || 3000;
@@ -95,8 +123,8 @@ async function startServer() {
 // Xử lý tắt ứng dụng
 process.on('SIGINT', async () => {
   console.log('\n⚠️ Đang tắt server...');
-  await rabbitmq.close();
-  await redisClient.close();
+  await rabbitmq.closeRabbitMQ();
+  await redisClient.closeRedis();
   process.exit(0);
 });
 
