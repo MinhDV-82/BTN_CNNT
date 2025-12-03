@@ -16,22 +16,25 @@ Dự án so sánh hiệu năng và cách sử dụng giữa **RabbitMQ** (Messag
 ## 🎯 Tổng quan
 
 Dự án này được xây dựng để:
+
 - ✅ So sánh **hiệu năng** (throughput, latency) giữa RabbitMQ và Redis
 - ✅ Nghiên cứu **use cases** phù hợp cho từng công nghệ
 - ✅ Demo **Message Queue Pattern** vs **Pub-Sub Pattern**
 - ✅ Thực hành **Microservices Architecture**
 
+👉 **[XEM KỊCH BẢN DEMO CHI TIẾT TẠI ĐÂY (DEMO_SCENARIOS.md)](./DEMO_SCENARIOS.md)** 👈
+
 ## 🛠️ Công nghệ sử dụng
 
-| Công nghệ | Version | Mục đích |
-|-----------|---------|----------|
-| **Node.js** | 18+ | Runtime environment |
-| **Express.js** | 5.x | Web framework |
-| **RabbitMQ** | 3.13 | Message broker |
-| **Redis** | 7.x | Cache & Pub-Sub |
-| **Docker** | - | Container orchestration |
-| **amqplib** | 0.10.9 | RabbitMQ client |
-| **redis** | 5.10.0 | Redis client |
+| Công nghệ      | Version | Mục đích                |
+| -------------- | ------- | ----------------------- |
+| **Node.js**    | 18+     | Runtime environment     |
+| **Express.js** | 5.x     | Web framework           |
+| **RabbitMQ**   | 3.13    | Message broker          |
+| **Redis**      | 7.x     | Cache & Pub-Sub         |
+| **Docker**     | -       | Container orchestration |
+| **amqplib**    | 0.10.9  | RabbitMQ client         |
+| **redis**      | 5.10.0  | Redis client            |
 
 ## 📦 Cài đặt
 
@@ -143,6 +146,7 @@ GET /health
 ```
 
 Response:
+
 ```json
 {
   "status": "OK",
@@ -208,6 +212,7 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 ### **RabbitMQ - Message Queue**
 
 #### ✅ **Ưu điểm:**
+
 - **Reliability**: Message persistence, acknowledge mechanism
 - **Complex routing**: Exchanges, bindings, routing keys
 - **Load balancing**: Multiple consumers cho cùng queue
@@ -215,11 +220,13 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 - **Dead Letter Queues**: Xử lý failed messages
 
 #### ⚠️ **Nhược điểm:**
+
 - Latency cao hơn Redis (do persistence)
 - Cấu hình phức tạp hơn
 - Resource intensive hơn
 
 #### 🎯 **Use Cases:**
+
 - Task queues (send email, process images)
 - Microservices communication
 - Event-driven architecture
@@ -228,18 +235,21 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 ### **Redis - Cache & Pub-Sub**
 
 #### ✅ **Ưu điểm:**
+
 - **Ultra-fast**: In-memory, sub-millisecond latency
 - **Simple**: Dễ setup và sử dụng
 - **Versatile**: Cache, Pub-Sub, Session store
 - **Data structures**: String, Hash, List, Set, Sorted Set
 
 #### ⚠️ **Nhược điểm:**
+
 - **No persistence guarantee** (Pub-Sub fire-and-forget)
 - **No message acknowledgment**
 - Limited message size
 - Single-threaded
 
 #### 🎯 **Use Cases:**
+
 - Caching (session, API responses)
 - Real-time features (chat, notifications)
 - Rate limiting
@@ -248,13 +258,13 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 
 ## 📈 Kết quả Benchmark (Expected)
 
-| Metric | RabbitMQ | Redis | Winner |
-|--------|----------|-------|--------|
-| **Throughput** | ~5,000 msg/s | ~50,000 ops/s | 🏆 Redis |
-| **Latency** | ~2-5ms | ~0.1-1ms | 🏆 Redis |
-| **Reliability** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🏆 RabbitMQ |
-| **Persistence** | Yes | Optional | 🏆 RabbitMQ |
-| **Complexity** | Medium | Low | 🏆 Redis |
+| Metric          | RabbitMQ     | Redis         | Winner      |
+| --------------- | ------------ | ------------- | ----------- |
+| **Throughput**  | ~5,000 msg/s | ~50,000 ops/s | 🏆 Redis    |
+| **Latency**     | ~2-5ms       | ~0.1-1ms      | 🏆 Redis    |
+| **Reliability** | ⭐⭐⭐⭐⭐   | ⭐⭐⭐        | 🏆 RabbitMQ |
+| **Persistence** | Yes          | Optional      | 🏆 RabbitMQ |
+| **Complexity**  | Medium       | Low           | 🏆 Redis    |
 
 ## 🔧 Debugging
 
@@ -284,6 +294,7 @@ PONG
 ### **RabbitMQ Management:**
 
 Truy cập http://localhost:15672
+
 - Username: `guest`
 - Password: `guest`
 
@@ -304,6 +315,7 @@ MIT License
 ## 👨‍💻 Author
 
 **Your Name**
+
 - GitHub: [@yourusername](https://github.com/yourusername)
 - Email: your.email@example.com
 
