@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redis Stream Reliability Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+      <header class="mb-8 text-center">
+        <h1 class="text-4xl font-bold text-indigo-700 mb-2">
+          🚀 Redis Stream Reliability Demo
+        </h1>
+        <p class="text-gray-600">
+          Mô phỏng hệ thống xử lý đơn hàng Flash Sale chịu tải cao & phục hồi
+          lỗi
+        </p>
+      </header>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div
+          class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500"
+        >
+          <div class="text-gray-500 text-sm">Queue Length</div>
+          <div class="text-3xl font-bold text-blue-600" id="queueLength">0</div>
+        </div>
+        <div
+          class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500"
+        >
+          <div class="text-gray-500 text-sm">Processed Orders</div>
+          <div class="text-3xl font-bold text-green-600" id="processedCount">
+            0
+          </div>
+        </div>
+        <div
+          class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500"
+        >
+          <div class="text-gray-500 text-sm">Pending (Crash)</div>
+          <div class="text-3xl font-bold text-red-600" id="pendingCount">0</div>
+        </div>
+        <div
+          class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500"
+        >
+          <div class="text-gray-500 text-sm">Consumer Status</div>
+          <div class="text-xl font-bold" id="consumerStatus">Checking...</div>
+        </div>
+      </div>
+
+      <!-- Control Panel -->
+      <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-bold mb-4 text-gray-800">
+          <i class="fas fa-gamepad mr-2"></i>Control Panel
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Sending Controls -->
+          <div class="space-y-3">
+            <h3 class="font-semibold text-gray-600">📤 Send Orders</h3>
+            <div class="flex gap-2">
+              <button
+                onclick="sendOrders(10, 'async')"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition"
+              >
+                10 Async
+              </button>
+              <button
+                onclick="sendOrders(100, 'async')"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
+              >
+                100 Async
+              </button>
+              <button
+                onclick="sendOrders(1000, 'async')"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded transition"
+              >
+                ⚡ 1000 Flash Sale
+              </button>
+            </div>
+            <div class="flex gap-2 mt-2">
+              <button
+                onclick="sendOrders(50, 'sync')"
+                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded transition"
+              >
+                50 Sync (Slow)
+              </button>
+            </div>
+            <div id="sendResult" class="text-sm text-gray-600 mt-2 h-6"></div>
+          </div>
+
+          <!-- Consumer Controls -->
+          <div class="space-y-3 border-l pl-6">
+            <h3 class="font-semibold text-gray-600">⚙️ Consumer Management</h3>
+            <div class="flex gap-2">
+              <button
+                onclick="controlConsumer('stop')"
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition"
+              >
+                <i class="fas fa-skull mr-2"></i>Kill Consumer
+              </button>
+              <button
+                onclick="controlConsumer('start')"
+                class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition"
+              >
+                <i class="fas fa-play mr-2"></i>Restart & Recover
+              </button>
+              <button
+                onclick="controlConsumer('reset')"
+                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded transition"
+              >
+                Reset Stats
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              * Kill Consumer để mô phỏng Crash. Restart để thấy Recovery.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs & Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Real-time Logs -->
+        <div
+          class="lg:col-span-2 bg-gray-900 text-green-400 p-4 rounded-lg shadow-md h-96 overflow-y-auto font-mono text-sm"
+          id="logsPanel"
+        >
+          <div class="border-b border-gray-700 pb-2 mb-2 text-white font-bold">
+            🖥️ System Logs
+          </div>
+          <!-- Logs will be injected here -->
+        </div>
+
+        <!-- Chart -->
+        <div class="bg-white p-4 rounded-lg shadow-md">
+          <canvas id="queueChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Chart Setup
+      const ctx = document.getElementById("queueChart").getContext("2d");
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "Queue Length",
+              data: [],
+              borderColor: "rgb(59, 130, 246)",
+              tension: 0.1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          animation: false,
+        },
+      });
+
+      // API Calls
+      async function sendOrders(count, type) {
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "Sending...";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(`/api/redis/orders/${type}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ count }),
+          });
+          const data = await res.json();
+          document.getElementById(
+            "sendResult"
+          ).innerText = `✅ ${data.message} (${data.duration}ms)`;
+        } catch (e) {
+          console.error(e);
+        } finally {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      async function controlConsumer(action) {
+        await fetch("/api/redis/control", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        });
+      }
+
+      // Polling Stats
+      setInterval(async () => {
+        try {
+          const res = await fetch("/api/redis/stats");
+          const data = await res.json();
+
+          // Update UI
+          document.getElementById("queueLength").innerText = data.queueLength;
+          document.getElementById("processedCount").innerText =
+            data.processedCount;
+          document.getElementById("pendingCount").innerText = data.pendingCount;
+
+          const statusEl = document.getElementById("consumerStatus");
+          if (data.isRunning) {
+            statusEl.innerHTML =
+              '<span class="text-green-600">● Running</span>';
+          } else {
+            statusEl.innerHTML =
+              '<span class="text-red-600">● Stopped (Crashed)</span>';
+          }
+
+          // Update Logs
+          const logsHtml = data.logs
+            .map((log) => {
+              let color = "text-green-400";
+              if (log.type === "error") color = "text-red-500";
+              if (log.type === "warning") color = "text-yellow-400";
+              return `<div class="mb-1"><span class="text-gray-500">[${log.time}]</span> <span class="${color}">${log.msg}</span></div>`;
+            })
+            .join("");
+          document.getElementById("logsPanel").innerHTML =
+            '<div class="border-b border-gray-700 pb-2 mb-2 text-white font-bold">🖥️ System Logs</div>' +
+            logsHtml;
+
+          // Update Chart
+          const now = new Date().toLocaleTimeString();
+          if (chart.data.labels.length > 20) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+          }
+          chart.data.labels.push(now);
+          chart.data.datasets[0].data.push(data.queueLength);
+          chart.update();
+        } catch (e) {
+          console.error("Polling error", e);
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>

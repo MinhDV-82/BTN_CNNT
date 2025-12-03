@@ -1,16 +1,22 @@
-version: '3.8'
+version: "3.8"
 
 services:
   rabbitmq:
-    image: rabbitmq:3-management  # Image có giao diện quản lý web
+    image: rabbitmq:3-management # Image có giao diện quản lý web
     ports:
-      - "5672:5672"   # Cổng kết nối từ code (AMQP)
+      - "5672:5672" # Cổng kết nối từ code (AMQP)
       - "15672:15672" # Cổng web UI (http://localhost:15672)
     environment:
-      RABBITMQ_DEFAULT_USER: admin  # Username đăng nhập
-      RABBITMQ_DEFAULT_PASS: admin  # Password đăng nhập
+      RABBITMQ_DEFAULT_USER: admin # Username đăng nhập
+      RABBITMQ_DEFAULT_PASS: admin # Password đăng nhập
 
   redis:
-    image: redis:alpine  # Image Redis nhẹ
+    image: redis:alpine # Image Redis nhẹ
+    command: redis-server --appendonly yes # ✅ Bật chế độ lưu trữ bền vững (Persistence)
     ports:
-      - "6379:6379"  # Cổng kết nối Redis
+      - "6379:6379" # Cổng kết nối Redis
+    volumes:
+      - redis_data:/data # ✅ Mount volume để giữ data khi container restart
+
+volumes:
+  redis_data:
