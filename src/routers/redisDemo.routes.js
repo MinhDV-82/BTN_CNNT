@@ -15,18 +15,18 @@ router.post("/sync/register", async (req, res) => {
   const startTime = Date.now();
   const { name, email } = req.body;
 
-  console.log(`[SYNC] 📝 Nhận yêu cầu đăng ký từ ${email}`);
+  console.log(`[SYNC] Nhận yêu cầu đăng ký từ ${email}`);
 
   try {
     // Bước 1: Giả lập lưu user vào DB (~100ms)
-    console.log(`[SYNC] 💾 Đang lưu user vào DB...`);
+    console.log(`[SYNC] Đang lưu user vào DB...`);
     await sleep(100);
-    console.log(`[SYNC] ✅ Đã lưu user vào DB`);
+    console.log(`[SYNC] Đã lưu user vào DB`);
 
     // Bước 2: Giả lập gửi email (~2500ms) - User phải CHỜ ở đây
-    console.log(`[SYNC] 📧 Đang gửi email chào mừng...`);
+    console.log(`[SYNC] Đang gửi email chào mừng...`);
     await sleep(2500);
-    console.log(`[SYNC] ✅ Đã gửi email cho ${email}`);
+    console.log(`[SYNC] Đã gửi email cho ${email}`);
 
     const durationMs = Date.now() - startTime;
 
@@ -38,9 +38,9 @@ router.post("/sync/register", async (req, res) => {
       user: { name, email },
     });
 
-    console.log(`[SYNC] ⏱️ Tổng thời gian xử lý: ${durationMs}ms`);
+    console.log(`[SYNC] Tổng thời gian xử lý: ${durationMs}ms`);
   } catch (error) {
-    console.error("[SYNC] ❌ Lỗi:", error.message);
+    console.error("[SYNC] Lỗi:", error.message);
     res.status(500).json({
       success: false,
       message: "Đăng ký thất bại: " + error.message,
@@ -56,13 +56,13 @@ router.post("/redis/register", async (req, res) => {
   const startTime = Date.now();
   const { name, email } = req.body;
 
-  console.log(`[REDIS-PRODUCER] 📝 Nhận yêu cầu đăng ký từ ${email}`);
+  console.log(`[REDIS-PRODUCER] Nhận yêu cầu đăng ký từ ${email}`);
 
   try {
     // Bước 1: Giả lập lưu user vào DB (~100ms)
-    console.log(`[REDIS-PRODUCER] 💾 Đang lưu user vào DB...`);
+    console.log(`[REDIS-PRODUCER] Đang lưu user vào DB...`);
     await sleep(100);
-    console.log(`[REDIS-PRODUCER] ✅ Đã lưu user vào DB`);
+    console.log(`[REDIS-PRODUCER] Đã lưu user vào DB`);
 
     // Bước 2: Tạo job và đẩy vào Redis Queue (~1ms)
     // User KHÔNG phải chờ gửi email, vì Worker sẽ xử lý background
@@ -78,7 +78,7 @@ router.post("/redis/register", async (req, res) => {
     await redisClient.lPush("email:queue", jobJson);
 
     console.log(
-      `[REDIS-PRODUCER] 📨 Đã đẩy job ${job.id} vào queue email:queue cho ${email}`
+      `[REDIS-PRODUCER] Đã đẩy job ${job.id} vào queue email:queue cho ${email}`
     );
 
     const durationMs = Date.now() - startTime;
@@ -94,10 +94,10 @@ router.post("/redis/register", async (req, res) => {
     });
 
     console.log(
-      `[REDIS-PRODUCER] ⏱️ Thời gian xử lý (không chờ gửi email): ${durationMs}ms`
+      `[REDIS-PRODUCER] Thời gian xử lý (không chờ gửi email): ${durationMs}ms`
     );
   } catch (error) {
-    console.error("[REDIS-PRODUCER] ❌ Lỗi:", error.message);
+    console.error("[REDIS-PRODUCER] Lỗi:", error.message);
     res.status(500).json({
       success: false,
       message: "Đăng ký thất bại: " + error.message,
@@ -119,7 +119,7 @@ router.get("/redis/stats", async (req, res) => {
       processedCount,
     });
   } catch (error) {
-    console.error("[REDIS-STATS] ❌ Lỗi:", error.message);
+    console.error("[REDIS-STATS] Lỗi:", error.message);
     res.status(500).json({
       success: false,
       message: "Lỗi lấy thống kê: " + error.message,

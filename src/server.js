@@ -116,21 +116,21 @@ async function startServer() {
     // Lắng nghe HTTP requests
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-      console.log(`\n🚀 Server đang chạy tại: http://localhost:${PORT}`);
-      console.log(`📝 API tạo đơn: POST http://localhost:${PORT}/api/orders`);
+      console.log(`\nServer đang chạy tại: http://localhost:${PORT}`);
+      console.log(`API tạo đơn: POST http://localhost:${PORT}/api/orders`);
       console.log(
         `🔍 API tra cứu: GET http://localhost:${PORT}/api/orders/:orderId\n`
       );
     });
   } catch (error) {
-    console.error("❌ Lỗi khởi động server:", error);
+    console.error("Lỗi khởi động server:", error);
     process.exit(1);
   }
 }
 
 // Xử lý tắt ứng dụng
 process.on("SIGINT", async () => {
-  console.log("\n⚠️ Đang tắt server...");
+  console.log("\nĐang tắt server...");
   await rabbitmq.closeRabbitMQ();
   await redisClient.closeRedis();
   process.exit(0);

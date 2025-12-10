@@ -17,13 +17,13 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * - Có thể scale worker độc lập (chạy nhiều worker song song)
  */
 async function startWorker() {
-  console.log("[REDIS-WORKER] 🚀 Khởi động Redis Worker...");
+  console.log("[REDIS-WORKER] Khởi động Redis Worker...");
 
   // Kết nối Redis
   await connectRedis();
 
-  console.log("[REDIS-WORKER] 👷 Bắt đầu worker, chờ job trong email:queue...");
-  console.log("[REDIS-WORKER] 💡 Mẹo: Để dừng worker, nhấn Ctrl+C\n");
+  console.log("[REDIS-WORKER] Bắt đầu worker, chờ job trong email:queue...");
+  console.log("[REDIS-WORKER] Mẹo: Để dừng worker, nhấn Ctrl+C\n");
 
   // Vòng lặp vô tận xử lý jobs
   while (true) {
@@ -42,15 +42,12 @@ async function startWorker() {
       try {
         job = JSON.parse(jobJson);
       } catch (parseErr) {
-        console.error(
-          "[REDIS-WORKER] ⚠️ Lỗi parse JSON job:",
-          parseErr.message
-        );
+        console.error("[REDIS-WORKER] Lỗi parse JSON job:", parseErr.message);
         continue;
       }
 
       console.log(
-        `\n[REDIS-WORKER] 📩 Nhận job ${job.id} - gửi email cho ${job.email}`
+        `\n[REDIS-WORKER] Nhận job ${job.id} - gửi email cho ${job.email}`
       );
       console.log(`[REDIS-WORKER] 📧 Đang giả lập gửi email...`);
 
@@ -58,15 +55,15 @@ async function startWorker() {
       // Trong thực tế: gọi API SendGrid, AWS SES, hoặc SMTP server
       await sleep(2500);
 
-      console.log(`[REDIS-WORKER] ✅ Đã gửi email chào mừng cho ${job.email}`);
+      console.log(`[REDIS-WORKER] Đã gửi email chào mừng cho ${job.email}`);
 
       // Tăng counter số job đã xử lý
       await redisClient.incr("email:processed:count");
 
       const currentCount = await redisClient.get("email:processed:count");
-      console.log(`[REDIS-WORKER] 📊 Tổng số email đã gửi: ${currentCount}`);
+      console.log(`[REDIS-WORKER] Tổng số email đã gửi: ${currentCount}`);
     } catch (err) {
-      console.error("[REDIS-WORKER] ❌ Lỗi xử lý job:", err.message);
+      console.error("[REDIS-WORKER] Lỗi xử lý job:", err.message);
       // Không để worker crash, tiếp tục xử lý job tiếp theo
       await sleep(1000); // Chờ 1s trước khi thử lại
     }
@@ -75,14 +72,14 @@ async function startWorker() {
 
 // Xử lý tín hiệu dừng worker (Ctrl+C)
 process.on("SIGINT", async () => {
-  console.log("\n[REDIS-WORKER] 🛑 Đang dừng worker...");
+  console.log("\n[REDIS-WORKER] Đang dừng worker...");
   await redisClient.quit();
-  console.log("[REDIS-WORKER] 👋 Worker đã dừng");
+  console.log("[REDIS-WORKER] Worker đã dừng");
   process.exit(0);
 });
 
 // Bắt đầu worker
 startWorker().catch((err) => {
-  console.error("[REDIS-WORKER] 💥 Lỗi khởi động worker:", err);
+  console.error("[REDIS-WORKER] Lỗi khởi động worker:", err);
   process.exit(1);
 });
