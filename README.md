@@ -16,6 +16,7 @@ Dự án so sánh hiệu năng và cách sử dụng giữa **RabbitMQ** (Messag
 ## 🎯 Tổng quan
 
 Dự án này được xây dựng để:
+
 - ✅ So sánh **hiệu năng** (throughput, latency) giữa RabbitMQ và Redis
 - ✅ Nghiên cứu **use cases** phù hợp cho từng công nghệ
 - ✅ Demo **Message Queue Pattern** vs **Pub-Sub Pattern**
@@ -23,15 +24,15 @@ Dự án này được xây dựng để:
 
 ## 🛠️ Công nghệ sử dụng
 
-| Công nghệ | Version | Mục đích |
-|-----------|---------|----------|
-| **Node.js** | 18+ | Runtime environment |
-| **Express.js** | 5.x | Web framework |
-| **RabbitMQ** | 3.13 | Message broker |
-| **Redis** | 7.x | Cache & Pub-Sub |
-| **Docker** | - | Container orchestration |
-| **amqplib** | 0.10.9 | RabbitMQ client |
-| **redis** | 5.10.0 | Redis client |
+| Công nghệ      | Version | Mục đích                |
+| -------------- | ------- | ----------------------- |
+| **Node.js**    | 18+     | Runtime environment     |
+| **Express.js** | 5.x     | Web framework           |
+| **RabbitMQ**   | 3.13    | Message broker          |
+| **Redis**      | 7.x     | Cache & Pub-Sub         |
+| **Docker**     | -       | Container orchestration |
+| **amqplib**    | 0.10.9  | RabbitMQ client         |
+| **redis**      | 5.10.0  | Redis client            |
 
 ## 📦 Cài đặt
 
@@ -143,6 +144,7 @@ GET /health
 ```
 
 Response:
+
 ```json
 {
   "status": "OK",
@@ -208,6 +210,7 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 ### **RabbitMQ - Message Queue**
 
 #### ✅ **Ưu điểm:**
+
 - **Reliability**: Message persistence, acknowledge mechanism
 - **Complex routing**: Exchanges, bindings, routing keys
 - **Load balancing**: Multiple consumers cho cùng queue
@@ -215,11 +218,13 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 - **Dead Letter Queues**: Xử lý failed messages
 
 #### ⚠️ **Nhược điểm:**
+
 - Latency cao hơn Redis (do persistence)
 - Cấu hình phức tạp hơn
 - Resource intensive hơn
 
 #### 🎯 **Use Cases:**
+
 - Task queues (send email, process images)
 - Microservices communication
 - Event-driven architecture
@@ -228,18 +233,21 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 ### **Redis - Cache & Pub-Sub**
 
 #### ✅ **Ưu điểm:**
+
 - **Ultra-fast**: In-memory, sub-millisecond latency
 - **Simple**: Dễ setup và sử dụng
 - **Versatile**: Cache, Pub-Sub, Session store
 - **Data structures**: String, Hash, List, Set, Sorted Set
 
 #### ⚠️ **Nhược điểm:**
+
 - **No persistence guarantee** (Pub-Sub fire-and-forget)
 - **No message acknowledgment**
 - Limited message size
 - Single-threaded
 
 #### 🎯 **Use Cases:**
+
 - Caching (session, API responses)
 - Real-time features (chat, notifications)
 - Rate limiting
@@ -248,13 +256,13 @@ curl -X POST http://localhost:3000/api/benchmark/compare \
 
 ## 📈 Kết quả Benchmark (Expected)
 
-| Metric | RabbitMQ | Redis | Winner |
-|--------|----------|-------|--------|
-| **Throughput** | ~5,000 msg/s | ~50,000 ops/s | 🏆 Redis |
-| **Latency** | ~2-5ms | ~0.1-1ms | 🏆 Redis |
-| **Reliability** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 🏆 RabbitMQ |
-| **Persistence** | Yes | Optional | 🏆 RabbitMQ |
-| **Complexity** | Medium | Low | 🏆 Redis |
+| Metric          | RabbitMQ     | Redis         | Winner      |
+| --------------- | ------------ | ------------- | ----------- |
+| **Throughput**  | ~5,000 msg/s | ~50,000 ops/s | 🏆 Redis    |
+| **Latency**     | ~2-5ms       | ~0.1-1ms      | 🏆 Redis    |
+| **Reliability** | ⭐⭐⭐⭐⭐   | ⭐⭐⭐        | 🏆 RabbitMQ |
+| **Persistence** | Yes          | Optional      | 🏆 RabbitMQ |
+| **Complexity**  | Medium       | Low           | 🏆 Redis    |
 
 ## 🔧 Debugging
 
@@ -284,8 +292,45 @@ PONG
 ### **RabbitMQ Management:**
 
 Truy cập http://localhost:15672
+
 - Username: `guest`
 - Password: `guest`
+
+## Demo Redis Queue
+
+Phan nay bo sung demo su dung Redis lam Message Queue don gian de so sanh voi RabbitMQ.
+
+### 1. Cai dat & Chay Redis
+
+Dam bao ban da co Docker. Chay lenh sau de khoi dong Redis:
+
+```bash
+docker compose up -d redis
+```
+
+### 2. Chay Server (Producer)
+
+```bash
+npm start
+# Server se lang nghe tai port mac dinh (vd: 3000)
+```
+
+### 3. Chay Worker (Consumer)
+
+Mo mot terminal moi va chay worker rieng cho Redis:
+
+```bash
+node src/redis/redisWorker.js
+```
+
+### 4. Su dung Demo
+
+Truy cap trinh duyet tai:
+`http://localhost:3000/redis/demo` (thay 3000 bang port cua ban)
+
+- Nhap thong tin va nhan "Gui vao Redis Queue".
+- Quan sat log o terminal chay Worker de thay qua trinh xu ly bat dong bo.
+- Quan sat dashboard tren web de thay so luong job trong queue va da xu ly.
 
 ## 🤝 Contributing
 
@@ -304,6 +349,7 @@ MIT License
 ## 👨‍💻 Author
 
 **Your Name**
+
 - GitHub: [@yourusername](https://github.com/yourusername)
 - Email: your.email@example.com
 

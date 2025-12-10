@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redis Queue Demo</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 0 20px;
+      }
+      .card {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .stats {
+        display: flex;
+        gap: 20px;
+      }
+      .stat-box {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+        flex: 1;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+      }
+      input {
+        padding: 8px;
+        margin-right: 10px;
+        width: 200px;
+      }
+      button {
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      #log {
+        background: #333;
+        color: #fff;
+        padding: 10px;
+        height: 200px;
+        overflow-y: auto;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Demo Redis Queue vs RabbitMQ</h1>
+
+    <div class="card">
+      <h2>Thong ke Redis Queue</h2>
+      <div class="stats">
+        <div class="stat-box">
+          <div>Dang cho (Queue)</div>
+          <div id="queueLength" class="stat-value">0</div>
+        </div>
+        <div class="stat-box">
+          <div>Da xu ly (Processed)</div>
+          <div id="processedCount" class="stat-value">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gui Email gia lap (Producer)</h2>
+      <div style="margin-bottom: 10px">
+        <input
+          type="text"
+          id="name"
+          placeholder="Ten nguoi dung"
+          value="User Test"
+        />
+        <input
+          type="email"
+          id="email"
+          placeholder="Email"
+          value="test@example.com"
+        />
+        <button onclick="sendJob()">Gui vao Redis Queue</button>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>Log Client</h3>
+      <div id="log"></div>
+    </div>
+
+    <script>
+      function log(msg) {
+        const el = document.getElementById("log");
+        el.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        el.scrollTop = el.scrollHeight;
+      }
+
+      async function updateStats() {
+        try {
+          const res = await fetch("/redis/stats");
+          const data = await res.json();
+          document.getElementById("queueLength").innerText = data.queueLength;
+          document.getElementById("processedCount").innerText =
+            data.processedCount;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function sendJob() {
+        const name = document.getElementById("name").value;
+        const email = document.getElementById("email").value;
+
+        try {
+          const res = await fetch("/redis/enqueue", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email }),
+          });
+          const result = await res.json();
+          if (result.success) {
+            log(`Da gui job: ${result.data.id}`);
+          } else {
+            log(`Loi: ${result.message}`);
+          }
+          updateStats();
+        } catch (e) {
+          log(`Loi ket noi: ${e.message}`);
+        }
+      }
+
+      // Cap nhat thong ke moi 2 giay
+      setInterval(updateStats, 2000);
+      updateStats();
+    </script>
+  </body>
+</html>
