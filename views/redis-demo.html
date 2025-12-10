@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo So Sánh SYNC vs REDIS QUEUE</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border: 1px solid #ddd;
+        padding: 30px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 24px;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+        font-size: 14px;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #666;
+      }
+
+      .button-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      button {
+        padding: 12px 20px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        background: white;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #f0f0f0;
+      }
+
+      .btn-sync {
+        border-color: #dc3545;
+        color: #dc3545;
+      }
+
+      .btn-sync:hover {
+        background: #dc3545;
+        color: white;
+      }
+
+      .btn-redis {
+        border-color: #007bff;
+        color: #007bff;
+      }
+
+      .btn-redis:hover {
+        background: #007bff;
+        color: white;
+      }
+
+      .comparison {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-left: 3px solid #666;
+      }
+
+      .comparison h4 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .comparison ul {
+        margin-left: 20px;
+        color: #555;
+      }
+
+      .comparison li {
+        margin: 8px 0;
+        font-size: 14px;
+      }
+
+      .result-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+      }
+
+      .result-section h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 16px;
+      }
+
+      .result-item {
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        background: white;
+        font-family: monospace;
+        font-size: 13px;
+      }
+
+      .result-sync {
+        border-left: 3px solid #dc3545;
+      }
+
+      .result-redis {
+        border-left: 3px solid #007bff;
+      }
+
+      .stats-section {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+      }
+
+      .stats-section h3 {
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 16px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 15px;
+        border: 1px solid #ddd;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+        margin: 10px 0;
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Demo So Sánh</h1>
+      <p class="subtitle">ĐỒNG BỘ (SYNC) vs BẤT ĐỒNG BỘ (REDIS QUEUE)</p>
+
+      <div class="form-group">
+        <label for="name">Họ và tên:</label>
+        <input
+          type="text"
+          id="name"
+          placeholder="Nhập họ tên..."
+          value="Nguyễn Văn A"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="Nhập email..."
+          value="nguyenvana@example.com"
+        />
+      </div>
+
+      <div class="button-group">
+        <button class="btn-sync" id="btnSync">
+          Đăng ký SYNC<br />
+          <small>(Phải chờ gửi email xong)</small>
+        </button>
+        <button class="btn-redis" id="btnRedis">
+          Đăng ký qua Redis Queue<br />
+          <small>(Trả về ngay lập tức)</small>
+        </button>
+      </div>
+
+      <div class="comparison">
+        <h4>So sánh hoạt động:</h4>
+        <ul>
+          <li>
+            <strong>SYNC:</strong> Lưu DB (0.1s) + Gửi Email (2.5s) = ~2.6s →
+            User phải CHỜ
+          </li>
+          <li>
+            <strong>REDIS QUEUE:</strong> Lưu DB (0.1s) + Đẩy vào Queue (0.001s)
+            = ~0.1s → Worker xử lý background
+          </li>
+        </ul>
+      </div>
+
+      <div class="result-section">
+        <h3>Kết quả:</h3>
+        <div id="resultContainer">
+          <p style="color: #999; text-align: center">
+            Chưa có kết quả. Hãy thử đăng ký!
+          </p>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h3>Thống kê Redis Queue:</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Số job đang chờ</div>
+            <div class="stat-value" id="queueLength">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tổng job đã xử lý</div>
+            <div class="stat-value" id="processedCount">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function register(mode) {
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+
+        if (!name || !email) {
+          alert("Vui lòng nhập đầy đủ thông tin!");
+          return;
+        }
+
+        const url =
+          mode === "sync" ? "/demo/sync/register" : "/demo/redis/register";
+
+        const startTime = performance.now();
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name, email }),
+          });
+
+          const data = await response.json();
+          const endTime = performance.now();
+          const clientTime = Math.round(endTime - startTime);
+
+          displayResult(data, clientTime);
+        } catch (error) {
+          alert("Lỗi: " + error.message);
+        }
+      }
+
+      function displayResult(data, clientTime) {
+        const container = document.getElementById("resultContainer");
+        const resultClass =
+          data.mode === "sync" ? "result-sync" : "result-redis";
+
+        const resultHtml = `
+                <div class="result-item ${resultClass}">
+                    <strong>${data.mode.toUpperCase()}</strong><br>
+                    ${data.message}<br>
+                    <strong>Thời gian Server:</strong> ${data.durationMs}ms<br>
+                    <strong>Thời gian Client:</strong> ${clientTime}ms
+                    ${
+                      data.jobId
+                        ? `<br><strong>Job ID:</strong> ${data.jobId}`
+                        : ""
+                    }
+                </div>
+            `;
+
+        container.innerHTML = resultHtml + container.innerHTML;
+      }
+
+      async function updateStats() {
+        try {
+          const response = await fetch("/demo/redis/stats");
+          const data = await response.json();
+
+          document.getElementById("queueLength").textContent = data.queueLength;
+          document.getElementById("processedCount").textContent =
+            data.processedCount;
+        } catch (error) {
+          console.error("Lỗi cập nhật stats:", error);
+        }
+      }
+
+      document.getElementById("btnSync").onclick = () => register("sync");
+      document.getElementById("btnRedis").onclick = () => register("redis");
+
+      setInterval(updateStats, 1000);
+      updateStats();
+    </script>
+  </body>
+</html>
